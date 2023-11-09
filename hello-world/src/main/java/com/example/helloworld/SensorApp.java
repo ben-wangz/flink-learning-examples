@@ -48,7 +48,7 @@ public class SensorApp {
 						TimeWindow currentWindow = context.window();
 						collector.collect(SensorReading.builder()
 								.id(key)
-								.timestamp(currentWindow.getStart() + currentWindow.getEnd() / 2)
+								.timestamp((currentWindow.getStart() + currentWindow.getEnd()) / 2)
 								.temperature(average)
 								.build());
 					}
