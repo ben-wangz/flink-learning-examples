@@ -1,20 +1,20 @@
 package com.example.helloworld;
 
+import java.time.Duration;
 import java.util.stream.StreamSupport;
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.apache.flink.streaming.runtime.operators.util.AssignerWithPeriodicWatermarksAdapter;
 import org.apache.flink.util.Collector;
 
 import com.example.helloworld.sink.SensorSink;
 import com.example.helloworld.source.SensorReading;
 import com.example.helloworld.source.SensorSource;
-import com.example.helloworld.source.SensorTimeAssigner;
 import com.google.common.base.Preconditions;
 
 public class SensorApp {
@@ -29,7 +29,8 @@ public class SensorApp {
 		DataStream<SensorReading> sensorReadingStream = env
 				.addSource(new SensorSource())
 				.assignTimestampsAndWatermarks(
-						new AssignerWithPeriodicWatermarksAdapter.Strategy<>(new SensorTimeAssigner()));
+					WatermarkStrategy.<SensorReading>forBoundedOutOfOrderness(Duration.ofSeconds(5))
+						.withTimestampAssigner((senserReading, timestamp) -> senserReading.getTimestamp()));
 		DataStream<SensorReading> transformedReadingStream = sensorReadingStream
 				.filter(reading -> reading.getTemperature() >= 25)
 				.keyBy(SensorReading::getId)
